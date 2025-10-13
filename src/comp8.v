@@ -17,11 +17,11 @@ module comp8 #(parameter T = 0.000)(
         .c7(cout),
         .s(s)
     );
-    assign ne = s[7]|s[6]|s[5]|s[4]|s[3]|s[2]|s[1]|s[0];
+    assign #(T) ne = s[7]|s[6]|s[5]|s[4]|s[3]|s[2]|s[1]|s[0];
     assign a_eq_b = ~ne;
-    assign a_gt_b = ne&cout;
-    assign a_lt_b = ne&~cout;
-    add8 adder2(
+    assign #(T) a_gt_b = ne&cout;
+    assign #(T) a_lt_b = ne&~cout;
+    add8 #(.T(T)) adder2(
         .a(s^{8{a_lt_b}}),
         .b(8'b00000000),
         .c_1(a_lt_b),

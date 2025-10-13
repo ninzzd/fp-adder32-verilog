@@ -1,0 +1,5 @@
+# gtwave simulation waveform dumpfiles
+*.vcd
+
+# iverilog compiled binaries
+*.vvp
