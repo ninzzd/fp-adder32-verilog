@@ -10,7 +10,7 @@ module comp8 #(parameter T = 0.000)(
     wire cout;
     wire ne;
     wire [7:0] s;
-    add8 adder1(
+    add8 #(.T(T)) adder1(
         .a(a),
         .b(~b),
         .c_1(1'b1),
