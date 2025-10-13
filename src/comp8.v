@@ -1,5 +1,5 @@
 `timescale 1 ns / 1 ps
-module exp_comparator #(parameter T = 0.000)(
+module comp8 #(parameter T = 0.000)(
     input [7:0] a,
     input [7:0] b,
     output a_lt_b,
@@ -27,5 +27,4 @@ module exp_comparator #(parameter T = 0.000)(
         .c_1(a_lt_b),
         .s(abs_diff)
     );
-
 endmodule
