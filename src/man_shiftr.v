@@ -14,24 +14,17 @@ module man_shiftr(
     assign man_gr = {man,2'b00};
 
     generate
-        for(i = 0;i <= 25;i=i+1)
+        for(i = 1;i <= 26;i=i+1)
         begin
             mux32 m(
-                .in({{(5+i){1'b0}},man_gr[26:i]}),
+                .in({{(5+i){1'b0}},man_gr[25:(i-1)]}),
                 .sel(shamt),
-                .out(reslt[i+1])
+                .out(res[i])
             );
         end
         for(i = 0;i <= 25;i=i+1) // Behavioral smask generation
         begin
-            if(i < shamt)
-            begin
-                assign smask[i] = 1'b1;
-            end
-            else
-            begin
-                assign smask[i] = 1'b0;
-            end
+            assign smask[i] = (i < shamt) ? 1'b1 : 1'b0; // Builds a comparator for each bit of smask, comparing shamt, the variable input, with the index, which is fixed 
         end
         for(i = 0;i <= 25;i=i+1)
         begin
