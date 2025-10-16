@@ -1,5 +1,5 @@
 // Author: Ninaad Desai
-// Description: 24-bit barrel logical right shifter with even rounding-off  
+// Description: Right-logical shift of mantissa using barrel shifters, appended with guard (G), round (R) and sticky (S) bits  
 module man_shiftr(
     input [23:0] man,
     input [4:0] shamt,
