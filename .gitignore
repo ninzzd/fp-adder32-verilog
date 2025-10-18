@@ -3,3 +3,12 @@
 
 # iverilog compiled binaries
 *.vvp
+
+# Testcases file
+*.test
+
+# VS code configurations
+.vscode/
+
+# C compiled binaries
+*.out
