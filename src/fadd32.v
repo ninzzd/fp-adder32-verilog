@@ -1,9 +1,8 @@
 module fadd32(
-    input clk,
     input mode, // 0 - add (a + b), 1 - sub (a - b)
     input [31:0] a,
     input [31:0] b,
-    output [31:0] res
+    output reg [31:0] res
 );
     wire a_isnorm;
     wire b_isnorm;
@@ -11,6 +10,7 @@ module fadd32(
     wire exp_aeqb;
     wire exp_agtb;
     wire [7:0] exp_absdiff;
+    wire [4:0] capped_exp_absdiff;
     comp8 exp_comp(
         .a(a[30:23]),
         .b(b[30:23]),
@@ -23,14 +23,16 @@ module fadd32(
     wire [23:0] man2; // mantissa of the number with smaller exponent
     wire [26:0] shifted_man2; 
     wire [26:0] sum;
-    wire [26:0] abs_sum;
+    reg [26:0] abs_sum;
     wire [4:0] shamt_sum;
-    wire [26:0] norm_sum_man;
+    reg [26:0] norm_sum_man;
     wire zero;
     wire cout;
     wire man_sub;
     wire man1_sign;
     wire [7:0] man1_exp;
+
+    assign capped_exp_absdiff = exp_absdiff > 8'b00011000 ? 5'b11000 : exp_absdiff[4:0];
     assign man_sub = a[31]^b[31]^mode;
     assign a_isnorm = a[30]|a[29]|a[28]|a[27]|a[26]|a[25]|a[24]|a[23]; // 0 - a is subnormal, 1 - a is normal
     assign b_isnorm = b[30]|b[29]|b[28]|b[27]|b[26]|b[25]|b[24]|b[23]; // 0 - b is subnormal, 1 - b is normal
@@ -41,12 +43,12 @@ module fadd32(
     assign man1_exp = (exp_agtb)&a[30:23] | (exp_altb)&b[30:23];
     assign man2[22:0] = {23{exp_agtb}}&b[22:0] | {23{~exp_agtb}}&a[22:0];
     assign man2[23] = (exp_agtb)&(b_isnorm) | (~exp_agtb)&(a_isnorm);
-    man_shiftr(
+    man_shiftr mshftr1(
         .man(man2),
-        .shamt(exp_absdiff),
+        .shamt(capped_exp_absdiff),
         .res(shifted_man2)
     );
-    pr_enc(
+    pr_enc27 prenc1(
         .in(abs_sum),
         .out(shamt_sum),
         .zero(zero)
@@ -75,18 +77,18 @@ module fadd32(
             end
             else
             begin
-                res[31] = man_sign;
+                res[31] = man1_sign;
                 abs_sum = sum;
             end
-            if(man1_exp > sum_shamt)    // Result is normal
+            if(man1_exp > shamt_sum)    // Result is normal
             begin
-                res[30:23] = man1_exp - sum_shamt;
-                norm_sum_man = sum << sum_shamt;
+                res[30:23] = man1_exp - shamt_sum;
+                norm_sum_man = sum << shamt_sum;
             end
             else    // Result is subnormal
             begin
                 res[30:23] = 8'h00;
-                norm_sum_man = sum << man1_exp
+                norm_sum_man = sum << man1_exp;
             end
             res[22:0] = norm_sum_man[25:3] + (norm_sum_man[2:0] > 3'b100 ? 1'b1 : (norm_sum_man[2:0] == 3'b100 ? norm_sum_man[3] : 1'b0));
         end

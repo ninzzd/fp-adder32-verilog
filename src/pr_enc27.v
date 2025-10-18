@@ -2,8 +2,8 @@
 // Description: 27-bit reverse order priority encoder with zero flag
 module pr_enc27(
     input [26:0] in,
-    output [4:0] out,
-    output zero
+    output reg [4:0] out,
+    output reg zero
 );
     integer i;
     always @(*)
