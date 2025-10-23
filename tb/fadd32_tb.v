@@ -18,6 +18,8 @@ module fadd32_tb;
     integer i;
     initial
     begin
+        $dumpfile("fadd32_tb.vcd");
+        $dumpvars(0,fadd32_tb);
         test = $fopen("f.test","r");
         if (test == 0) $finish;
         if($fscanf(test,"%d\n",n) == 1)
