@@ -1,7 +1,7 @@
 # Mantissa Alignment
 **File** - `lm_r_shifter.v`
 ## Purpose
-- To receive the *lm+1* input mantissa bits *in* (with leading 1 for normalized numbers and 0 for sub-normal numbers) of $B_0$ (number with smaller exponent), and right-shift the bits based on the input *shamt* from the exponent-comparator
+- To receive the *lm+1* input mantissa bits *in* (with leading 1 for normalized numbers and 0 for sub-normal numbers) of $B_0$ (number with smaller exponent), and right-shift the bits based on the input *shamt* from the exponent-comparator.
 - To output the $lm+1$ right-shifted mantissa bits, along with rounding suffix bits: G, R and S. The output is collectively passed as a single $lm+4$ bit vector *out*.
 
 ## Architectural Decisions
