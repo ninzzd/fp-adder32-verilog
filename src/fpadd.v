@@ -117,7 +117,7 @@ module fpadd #(
         .W(lm+4)
     ) mantissa_adder (
         .a({a0m,3'b000}),
-        .b({(lm+4){maddop}} ^ b0m_shifted),
+        .b({(lm+4){maddop}} ^ b0m_shifted), // XOR with maddop, for 1s comp (sub)
         .cin(maddop),
         .s(maddres),
         .cout(maddcout)
