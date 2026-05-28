@@ -113,14 +113,13 @@ The hand-drawn diagram below depicts the micro-architectural implementation of t
 
 ## Documentation
 Given below are the major components of the floating-point adder and their corresponding documentation links:
+- [Nomenclature](./docs/nomenclature.md)
 - [Exponent Comparator](./docs/exponent_comparator.md)
 - [Mantissa Alignment](./docs/mantissa_alignment.md)
 - [Mantissa Adder Operation Logic and Output Sign](./docs/manop_outsign.md)
 - [Leading Zero Detector](./docs/leading_zero_detector.md)
 - [Normalization](./docs/normalization.md)
 - [Rounding](./docs/rounding.md)
-- [Sign Handling](./docs/sign_handling.md)
-- [Special Value Detection](./docs/special_value_detection.md)
 
 Refer to [this page](./docs/theory.md) for detailed documentation on floating-point adder theory.
 
