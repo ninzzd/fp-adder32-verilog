@@ -1,4 +1,4 @@
-// Ripple carry incrementer
+// Combinatorial incrementer with carry-in
 module inc #(
    parameter W = 8
 )(
@@ -7,21 +7,14 @@ module inc #(
     output [W-1:0] out,
     output cout
 );
-    wire [W-1:0] c;
     genvar i;
     generate
         for(i = 0; i < W; i = i + 1) begin: inc_loop
-            if (i == 0)
-            begin
-                assign out[i] = in[i] ^ cin; // LSB is inverted
-                assign c[i] = in[i] & cin; // carry is generated if LSB is 1
-            end
+            if(i == 0)
+                assign out[i] = in[i] ^ cin;
             else
-            begin
-                assign out[i] = in[i] ^ c[i-1]; // other bits are XOR of input and carry
-                assign c[i] = in[i] & c[i-1]; // carry generation
-            end
+                assign out[i] = in[i] ^ (cin & (&(in[i-1:0])));
         end
     endgenerate
-    assign cout = c[W-1]; // carry out is the last carry
+    assign cout = cin & (&in[W-1:0]); // carry out is the last carry
 endmodule

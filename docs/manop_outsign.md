@@ -8,13 +8,13 @@
 - The `add.v` file constructs an **`N`-bit CLA** using `generate` loops.
 - The operand with the lower exponent ($B_0$ in the file) has a mantissa of `lm`-bits, which is extended to `lm+3` after mantissa alignment which generates 3 rounding bits. The other mantissa (that of $A_0$) contains only `lm`-bits, and only requires least-significant zero-padding (or manual right-shifting).
 - The adder instantiated in `fpadd.v` is a `lm+3`-bit CLA.
-- By default, the mantissa of $B_0$ is passed to the inverting-XOR block for generating its 1's compliment based on bit `maddop`.
+- By default, the mantissa of $B_0$ is passed to the inverting-XOR block for generating its 1's complement based on bit `maddop`.
 - The carry-out bit of the adder is represented as $M_{ADD_{c}}$ in the [diagram](../README.md#Architecture) and as `maddcout` in the file.
-- The adder result `maddres` is passed through a 2s compliment module which is triggered by a wire `flag`. The floating-point number can have a sign, but its mantissa must always be positive, hence the following logic:
+- The adder result `maddres` is passed through a 2s complement module which is triggered by a wire `flag`. The floating-point number can have a sign, but its mantissa must always be positive, hence the following logic:
 ```
     If op is sub (maddop = 1):
         If maddcout = 0 (negative result mantissa):
-            flag = 1 (take 2s compliment)
+            flag = 1 (take 2s complement)
         Else:
             flag = 0 (keep as it is)
     Else:
@@ -46,4 +46,4 @@ Let $A_0$ and $B_0$ be the absolute values of the operands, with $A_0$ having a 
 ### Handling Zero Result
 - Zero can be only obtained by the subtraction of equal operands or addition of zeros (trivial case). 
 - In the first case, `flag` will always be 1, and hence output sign could be 0 or 1 depending on the sign of $A_0$. This is not suitable as there would exist two distinct representations of zero: $+0$ and $-0$.
-- To avoid this: `sc = (sa0 ^ flag) & ~isZero` (`isZero` is obtained from the priority encoder that checks for leading zeros and accordingly provides the left-shift ammount for renormalization).
+- To avoid this: `sc = (sa0 ^ flag) & ~isZero` (`isZero` is obtained from the priority encoder that checks for leading zeros and accordingly provides the left-shift amount for renormalization).

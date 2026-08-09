@@ -106,7 +106,7 @@ The hand-drawn diagram below depicts the micro-architectural implementation of t
 │   ├── utils_tb/       # Test-benches for general modules
 │   └── fpadd_tb.v         # Main test-bench file (.v)
 ├── docs/               # Technical documentation and diagrams
-│   ├── README.md       # Documentation
+│   # ├── README.md       # Documentation (does not exist yet)
 │   └── logs/           # Waveform images and logs of test runs
 └── README.md           # You are here
 ```
@@ -118,20 +118,30 @@ Given below are the major components of the floating-point adder and their corre
 - [Mantissa Alignment](./docs/mantissa_alignment.md)
 - [Mantissa Adder Operation Logic and Output Sign](./docs/manop_outsign.md)
 - [Leading Zero Detector](./docs/leading_zero_detector.md)
-- [Normalization](./docs/normalization.md)
-- [Rounding](./docs/rounding.md)
+<!-- - [Normalization](./docs/normalization.md) -->
+<!-- - [Rounding](./docs/rounding.md) -->
 
 Refer to [this page](./docs/theory.md) for detailed documentation on floating-point adder theory.
 
 ## RoadMap
+
+### V1.0 - Functional Correctness
 - [x] Handles additions/subtractions of normalized numbers.
 - [x] Accounts for sub-normal numbers.
 - [x] Handles +0, -0
 - [ ] Handles $+\infty$, $-\infty$
 - [ ] Handles NaN propagation
-- [ ] Extensive testing with SoftFloat
-- [ ] Pipelining and multi-cycle design
-- [ ] Testing on FPGA hardware and benchmarking
+
+### V1.1 - Verification & Characterization (unpipelined)
+- [ ] Promote the corner cases logged in [`running_doc.md`](./docs/logs/running_doc.md) (subnormal-result sign aliasing, shamt-clipping edge cases, GRS truncation at the subnormal boundary) into a permanent regression test suite
+- [ ] Cross-validate output against a reference floating-point oracle (e.g. SoftFloat) using `real2hex`-generated vectors, for exhaustive/constrained-random coverage beyond hand-picked cases
+- [ ] STA and critical-path analysis on the unpipelined datapath — identify the longest combinational chain (candidate: mantissa-alignment barrel shifter → mantissa adder → 2's-complement → leading-zero detect → renormalize) and record baseline Fmax
+- [ ] FPGA prototyping: resource utilization + baseline Fmax (unpipelined)
+
+### V2.0 - Pipelining & Performance
+- [ ] Pipelining, with stage boundaries chosen using the V1.1 critical-path breakdown
+- [ ] Re-run FPGA prototyping post-pipelining: resource utilization + Fmax delta vs. the V1.1 baseline
+- [ ] Fmax estimation for the pipelined architecture, compared directly against the V1.1 unpipelined baseline
 
 ## License
 This project is open-source and available under the terms of the [MIT License](LICENSE).

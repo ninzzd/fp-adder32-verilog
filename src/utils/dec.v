@@ -1,4 +1,4 @@
-// Ripple carry decrementer for exponent (positive operand, does not require 2s complement for negative results)
+// Combinatorial decrementer without carry-in
 module dec #(
     parameter W = 8
 )(
@@ -6,21 +6,15 @@ module dec #(
     input [W-1:0] in,
     output [W-1:0] out
 );
-    wire [W-1:0] c; // intermediate carrys
     genvar i;
     generate
         for(i = 0;i < W;i = i+1)
         begin: gen_loop
             if(i == 0)
-            begin
                 assign out[i] = ~in[i];
-                assign c[i] = in[i];
-            end
             else 
-            begin
-                assign out[i] = ~(in[i] ^ c[i-1]);
-                assign c[i] = c[i-1] | in[i];
-            end
+                assign out[i] = (~in[i]) ^ (|in[i-1:0]);
         end
     endgenerate
+
 endmodule

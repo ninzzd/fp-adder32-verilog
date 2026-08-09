@@ -17,7 +17,7 @@ module inc_tb;
     );
 
     initial begin
-        $monitor("in = %b, out = %b, cout = %b", in, out, cout);
+        $monitor("cin = %b, in = %b, out = %b, cout = %b", cin, in, out, cout);
         cin = 1'b0;in = 8'b00000000; #10;
         cin = 1'b1;in = 8'b00000001; #10;
         cin = 1'b1;in = 8'b00001111; #10;
