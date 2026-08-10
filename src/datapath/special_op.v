@@ -6,14 +6,22 @@ module special_op #(
     input [lm+le:0] b,
     input op,
 
-    output is_nan,       // 1 if the bypassed result must be qNaN
-    output is_inf,        // 1 if the bypassed result must be +/-inf
-    output res_inf_sign,  // sign of the bypassed infinity result, valid iff is_inf
-    output bypass          // 1 if special_op's result should override the main datapath result (is_nan | is_inf)
+    output [1:0] out // 0 - pass: main datapath rseult, 1 - pass: (a0s) inf. 2 - qNaN
 );
 
     wire a_is_inf, a_is_nan, a_is_snan, a_is_qnan;
     wire b_is_inf, b_is_nan, b_is_snan, b_is_qnan;
+
+    assign a_is_inf = &(a[lm+le-1:lm]) & ~|(a[lm-1:0]);
+    assign b_is_inf = &(b[lm+le-1:lm]) & ~|(b[lm-1:0]);
+    assign a_is_snan = &(a[lm+le-1:lm]) & ~a[lm-1] & |(a[lm-2:0]);
+    assign b_is_snan = &(b[lm+le-1:lm]) & ~b[lm-1] & |(b[lm-2:0]);
+    assign a_is_qnan = &(a[lm+le-1:lm]) & a[lm-1] & ~|(a[lm-2:0]);
+    assign b_is_qnan = &(b[lm+le-1:lm]) & b[lm-1] & ~|(b[lm-2:0]);
+
+    assign is_nan = a_
+
+
 
     // TODO: a_is_inf  = (exponent of a is all 1s) & (mantissa of a is 0)
     // TODO: a_is_nan  = (exponent of a is all 1s) & (mantissa of a != 0)

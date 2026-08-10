@@ -4,7 +4,7 @@
 ![Status](https://img.shields.io/badge/Status-Simulation_Complete-brightgreen.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-A from-scratch, hardware-level implementation of IEEE-754 floating-point addition/subtraction in Verilog HDL, built as a learning resource for deep architectural understanding.
+A from-scratch, gate-level implementation of IEEE-754 floating-point addition/subtraction for parameterized bit-widths, in Verilog HDL, built as a learning resource for deep architectural understanding.
 ## Why This Project Exists?
 Most resources on IEEE-754 floating-point addition:
 - Explain theory briefly, without diving into some important concepts such as sub-normal handling, rounding, etc.
@@ -133,15 +133,16 @@ Refer to [this page](./docs/theory.md) for detailed documentation on floating-po
 - [ ] Handles NaN propagation
 
 ### V1.1 - Verification & Characterization (unpipelined)
-- [ ] Promote the corner cases logged in [`running_doc.md`](./docs/logs/running_doc.md) (subnormal-result sign aliasing, shamt-clipping edge cases, GRS truncation at the subnormal boundary) into a permanent regression test suite
-- [ ] Cross-validate output against a reference floating-point oracle (e.g. SoftFloat) using `real2hex`-generated vectors, for exhaustive/constrained-random coverage beyond hand-picked cases
-- [ ] STA and critical-path analysis on the unpipelined datapath — identify the longest combinational chain (candidate: mantissa-alignment barrel shifter → mantissa adder → 2's-complement → leading-zero detect → renormalize) and record baseline Fmax
-- [ ] FPGA prototyping: resource utilization + baseline Fmax (unpipelined)
+- [ ] Promote corner cases from [`running_doc.md`](./docs/logs/running_doc.md) into a permanent regression suite
+- [ ] Cross-validate against a reference oracle (e.g. SoftFloat) using `real2hex` vectors
+- [ ] STA/critical-path analysis on the unpipelined datapath, baseline Fmax
+- [ ] FPGA prototyping: resource utilization + baseline Fmax
+- [ ] Benchmark Fmax, critical-path delay, and power/energy across bit-width configs (`le`, `lm`) relevant to ML inference: binary32 (`le=8, lm=23`), binary16 (`le=5, lm=10`), bfloat16 (`le=8, lm=7`), FP8 E4M3 (`le=4, lm=3`), FP8 E5M2 (`le=5, lm=2`)
 
 ### V2.0 - Pipelining & Performance
-- [ ] Pipelining, with stage boundaries chosen using the V1.1 critical-path breakdown
-- [ ] Re-run FPGA prototyping post-pipelining: resource utilization + Fmax delta vs. the V1.1 baseline
-- [ ] Fmax estimation for the pipelined architecture, compared directly against the V1.1 unpipelined baseline
+- [ ] Pipelining, with stage boundaries chosen from the V1.1 critical-path breakdown
+- [ ] Re-run FPGA prototyping post-pipelining: resource utilization + Fmax delta vs. V1.1 baseline (same bit-width configs)
+- [ ] Fmax estimation for the pipelined architecture vs. the V1.1 unpipelined baseline
 
 ## License
 This project is open-source and available under the terms of the [MIT License](LICENSE).
