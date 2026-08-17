@@ -1,7 +1,7 @@
 # Variable-Precision Floating-Point Adder
 
 ![Verilog](https://img.shields.io/badge/Language-Verilog-blue.svg)
-![Status](https://img.shields.io/badge/Status-Simulation_Complete-brightgreen.svg)
+![Status](https://img.shields.io/badge/Status-Simulation_Ongoing-yellow.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
 A from-scratch, gate-level implementation of IEEE-754 floating-point addition/subtraction for parameterized bit-widths, in Verilog HDL, built as a learning resource for deep architectural understanding.
