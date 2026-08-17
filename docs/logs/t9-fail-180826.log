@@ -1,0 +1,8 @@
+FAIL: a=7f800000 b=ff800000 op=0 expected=7fc00000 got=ff800000
+FAIL: a=ff800000 b=ff800000 op=1 expected=7fc00000 got=ff800000
+FAIL: a=7f800000 b=00000001 op=1 expected=7f800000 got=ff800000
+FAIL: a=7f7fffff b=73000000 op=0 expected=7f800000 got=7f7fffff
+FAIL: a=80000000 b=80000000 op=0 expected=80000000 got=00000000
+FAIL: a=bf800000 b=bf800000 op=0 expected=c0000000 got=40000000
+FAIL: a=3f800000 b=33c00000 op=0 expected=3f800001 got=3f800000
+FAIL: a=3f800000 b=33800001 op=0 expected=3f800001 got=3f800000
