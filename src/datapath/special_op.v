@@ -11,6 +11,7 @@ module special_op #(
 
     wire a_is_inf, a_is_nan, a_is_snan, a_is_qnan;
     wire b_is_inf, b_is_nan, b_is_snan, b_is_qnan;
+    wire maddop; // later, remove this wire and input from fpadd module
 
     assign a_is_inf = &(a[lm+le-1:lm]) & ~|(a[lm-1:0]);
     assign b_is_inf = &(b[lm+le-1:lm]) & ~|(b[lm-1:0]);
@@ -22,7 +23,9 @@ module special_op #(
     assign a_is_nan = a_is_snan | a_is_qnan;
     assign b_is_nan = b_is_snan | b_is_qnan;
 
-    assign out = a_is_nan | b_is_nan ? 2'b10 : a_is_inf | b_is_inf ? 2'b01 : 2'b00;
+    assign maddop = a[lm+le] ^ b[lm+le] ^ op;
+
+    assign out = a_is_nan | b_is_nan ? 2'b10 : a_is_inf & b_is_inf & maddop ? 2'b10 : a_is_inf | b_is_inf ? 2'b01 : 2'b00;
     
 
 endmodule
