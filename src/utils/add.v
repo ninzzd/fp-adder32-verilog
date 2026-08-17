@@ -1,4 +1,5 @@
 // W-bit CLA adder
+// TODO: parameterize adder architecture - Brent-Kruger, PPA, CLA, RCA, others
 module add #(
     parameter W = 8
 )(

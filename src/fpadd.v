@@ -7,6 +7,8 @@ module fpadd #(
     input op,
     output [le+lm:0] c
 );
+    wire [1:0] sop_out; // special operand unit output
+    wire sop_out_or;
     wire na; // is 'a' normal
     wire nb; // is 'b' normal
 
@@ -41,12 +43,25 @@ module fpadd #(
     wire [le-1:0] reseadd;
     wire [le-1:0] rese_bround;
     wire [le-1:0] rese_around;
+    wire res_sign; // final result sign from main datapath
+    wire res_notinf; // clear if result is inf due to overflow (add or round), set when res is not inf
+    wire [le-1:0] res_exp; // final result exp from main datapath
+    wire [lm-1:0] res_man; // final result mantissa from main datapath
     wire maddcout;
     wire flag;
     wire round_cout;
     wire resm_isSubnormal;
-    
 
+    special_op #(
+        .lm(lm),
+        .le(le)
+    ) sop_unit(
+        .a(a),
+        .b(b),
+        .op(op),
+        .out(sop_out)
+    );
+    
     assign na = |(a[le+lm-1:lm]); // Reduction OR -> 0 iff all bits are 0 : Case of subnormal numbers ->  1 otherwise : Normal numbers (with NaN and inf being exceptions)
     assign nb = |(b[le+lm-1:lm]); 
 
@@ -184,7 +199,7 @@ module fpadd #(
         .shamt(a0e_lshamt_min),
         .out(maddres_ls)
     );
-    assign c[lm+le] = (a0s ^ flag ^ (op&~ageb))&~maddres_isZero; // sign of the result, -0 is not allowed, pushed to +0
+    assign res_sign = (a0s ^ flag ^ (op&~ageb))&~maddres_isZero; // sign of the result, -0 is not allowed, pushed to +0
 
     mux #(
         .W(lm+4),
@@ -220,7 +235,6 @@ module fpadd #(
         .sel(round_cout),
         .out(resm)
     );
-    assign c[lm-1:0] = resm[lm-1:0]; // Result mantissa finally obtained
 
     mux #(
         .W(le),
@@ -242,6 +256,32 @@ module fpadd #(
         .cout()
     );
 
-    assign c[lm+le-1:lm] = {rese_around[le-1:1],rese_around[0]&~resm_isSubnormal}; // may not be most optimal logic, can substitute for round_cout and resm[lm] directly if needed
+    // main datapath inf handling
+    assign res_exp = {rese_around[le-1:1],rese_around[0]&~resm_isSubnormal}; // may not be most optimal logic, can substitute for round_cout and resm[lm] directly if needed
+    assign res_notinf = ~&(res_exp);
+    assign res_man = resm[lm-1:0] & {lm{res_notinf}}; // rounding result with inf mask
 
+    // special values (inf/nan) handling
+    assign sop_out_or = |(sop_out);
+    mux #(
+        .W(1),
+        .N(2)
+    ) res_sign_mux (
+        .in({maddop&~sop_out[1],res_sign}), // Design choice: output canonical qNaN always, with sign bit 0
+        .sel(sop_out_or),
+        .out(c[lm+le])
+    );
+
+    assign c[lm+le-1:lm] = res_exp | {le{sop_out_or}};
+    
+    mux #(
+        .W(1),
+        .N(2)
+    ) manMSB_mux (
+        .in({sop_out[1],res_man[lm-1]}),
+        .sel(sop_out_or),
+        .out(c[lm-1])
+    );
+    assign c[lm-2:0] = res_man[lm-2:0] & ~{(lm-1){sop_out_or}};
+    
 endmodule

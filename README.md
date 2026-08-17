@@ -119,7 +119,7 @@ Given below are the major components of the floating-point adder and their corre
 - [Mantissa Adder Operation Logic and Output Sign](./docs/manop_outsign.md)
 - [Leading Zero Detector](./docs/leading_zero_detector.md)
 <!-- - [Normalization](./docs/normalization.md) -->
-<!-- - [Rounding](./docs/rounding.md) -->
+- [Rounding](./docs/rounding.md)
 
 Refer to [this page](./docs/theory.md) for detailed documentation on floating-point adder theory.
 
