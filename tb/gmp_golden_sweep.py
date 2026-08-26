@@ -33,6 +33,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -210,15 +211,64 @@ def gen_sample(lm, le, n, seed):
 # Driving the real testbench/DUT via iverilog + vvp
 # --------------------------------------------------------------------------
 
-def run_dut(lm, le, vectors, work_dir):
+def format_elapsed(seconds):
+    """Always exactly two units, coarsening as the value grows so the line
+    never depends on the number of digits fluctuating:
+      <60s:    Ss MMMms
+      <60min:  Mm SSs
+      else:    Hh MMm
+    """
+    total_ms = int(seconds * 1000)
+    hours, rem_ms = divmod(total_ms, 3_600_000)
+    minutes, rem_ms = divmod(rem_ms, 60_000)
+    secs, ms = divmod(rem_ms, 1000)
+    if hours > 0:
+        return f"{hours}h {minutes:02d}m"
+    if minutes > 0:
+        return f"{minutes}m {secs:02d}s"
+    return f"{secs}s {ms:03d}ms"
+
+
+def print_progress(tag, done, total, start_time, *, min_interval=0.05, force=False, _state={}):
+    """In-place progress line tagged by pipeline stage (e.g. "csv_gen",
+    "tb_run"): overwrites the previous line via '\\r' rather than scrolling.
+    Throttled to at most one redraw per `min_interval` seconds per tag so it
+    doesn't itself become the bottleneck, and each tag tracks its own
+    previous-line length so stages never bleed padding into each other."""
+    st = _state.setdefault(tag, {})
+    now = time.time()
+    if not force and now - st.get("last", 0.0) < min_interval:
+        return
+    st["last"] = now
+
+    line = f"[{tag}] Progress = ({done}/{total}). Time elapsed = {format_elapsed(now - start_time)}"
+    pad = max(0, st.get("prev_len", 0) - len(line))
+    sys.stdout.write("\r" + line + " " * pad)
+    sys.stdout.flush()
+    st["prev_len"] = len(line)
+
+
+def run_dut(lm, le, vectors, work_dir, total_hint=None):
     """Writes test_vectors.csv, compiles fpadd_tb.v (DUT included) with lm/le
-    overridden via -P, runs it under vvp, and returns (stdout_text, n_run)."""
+    overridden via -P, runs it under vvp, and returns (stdout_text, n_run).
+
+    Golden-reference computation (the slow, per-vector gmpy2 work) happens
+    lazily as `vectors` is consumed here, so progress is reported from this
+    loop rather than from the generator itself.
+    """
     csv_path = work_dir / "test_vectors.csv"
+    hex_width = (lm + le + 1 + 3) // 4
     rows = []
     n = 0
+    start_time = time.time()
     for a_bits, b_bits, op, exp_bits in vectors:
-        rows.append(f"{a_bits:0{(lm+le+1+3)//4}x},{b_bits:0{(lm+le+1+3)//4}x},{op},{exp_bits:0{(lm+le+1+3)//4}x}")
+        rows.append(f"{a_bits:0{hex_width}x},{b_bits:0{hex_width}x},{op},{exp_bits:0{hex_width}x}")
         n += 1
+        print_progress("csv_gen", n, total_hint if total_hint is not None else n, start_time)
+    print_progress("csv_gen", n, total_hint if total_hint is not None else n, start_time, force=True)
+    sys.stdout.write("\n")
+    sys.stdout.flush()
+
     with open(csv_path, "w") as f:
         f.write(f"{n}\n")
         f.write("\n".join(rows) + "\n")
@@ -238,16 +288,46 @@ def run_dut(lm, le, vectors, work_dir):
         raise RuntimeError(f"iverilog compile failed:\n{proc.stdout}\n{proc.stderr}")
 
     # tb reads "./test_vectors.csv" and writes "./docs/logs/fail_log.log"
-    # relative to cwd, so run from REPO_ROOT and stage the csv there.
-    staged_csv = REPO_ROOT / "test_vectors.csv"
-    shutil.copyfile(csv_path, staged_csv)
-    try:
-        proc = subprocess.run(["vvp", str(vvp_path)], cwd=REPO_ROOT,
-                               capture_output=True, text=True, timeout=None)
-    finally:
-        staged_csv.unlink(missing_ok=True)
+    # relative to cwd. Run it with cwd=work_dir (this call's own private temp
+    # directory) rather than REPO_ROOT: both of those relative paths are then
+    # confined to this run alone, so two invocations of this script running
+    # concurrently can never read/overwrite each other's staged CSV or
+    # fail_log.log (they used to, both via the same fixed REPO_ROOT paths).
+    (work_dir / "docs" / "logs").mkdir(parents=True, exist_ok=True)
+    stdout = stream_vvp(vvp_path, n, cwd=work_dir)
 
-    return proc.stdout, n
+    return stdout, n
+
+
+def stream_vvp(vvp_path, n_vectors, cwd):
+    """Runs vvp and reports live progress as each PASS:/FAIL: line from the
+    testbench's own $display arrives, instead of blocking until it exits.
+
+    vvp's stdout is fully-buffered (not line-buffered) when piped rather
+    than attached to a tty, so without `stdbuf -oL` its output would only
+    surface in large infrequent chunks and progress would appear to stall.
+    """
+    cmd = ["vvp", str(vvp_path)]
+    if shutil.which("stdbuf"):
+        cmd = ["stdbuf", "-oL", *cmd]
+
+    proc = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT, text=True, bufsize=1)
+    lines = []
+    completed = 0
+    start_time = time.time()
+    for line in proc.stdout:
+        line = line.rstrip("\n")
+        lines.append(line)
+        if line.startswith("PASS:") or line.startswith("FAIL:"):
+            completed += 1
+            print_progress("tb_run", completed, n_vectors, start_time)
+    proc.wait()
+    print_progress("tb_run", completed, n_vectors, start_time, force=True)
+    sys.stdout.write("\n")
+    sys.stdout.flush()
+
+    return "\n".join(lines)
 
 
 # --------------------------------------------------------------------------
@@ -316,7 +396,7 @@ def main():
 
     with tempfile.TemporaryDirectory(dir=REPO_ROOT / "docs" / "logs") as tmp:
         work_dir = Path(tmp)
-        stdout, n_run = run_dut(lm, le, with_golden(), work_dir)
+        stdout, n_run = run_dut(lm, le, with_golden(), work_dir, total_hint=total)
 
     fails = [line for line in stdout.splitlines() if line.startswith("FAIL:")]
 

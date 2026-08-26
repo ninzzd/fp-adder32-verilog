@@ -104,9 +104,9 @@ The hand-drawn diagram below depicts the micro-architectural implementation of t
 ├── tb/                 # Test-bench files (.v)
 │   ├── datapath_tb/    # Test-benches for datapath-specific modules
 │   ├── utils_tb/       # Test-benches for general modules
-│   └── fpadd_tb.v         # Main test-bench file (.v)
+│   └── fpadd_tb.v      # Main test-bench file (.v)
 ├── docs/               # Technical documentation and diagrams
-│   # ├── README.md       # Documentation (does not exist yet)
+│   # ├── README.md     # Documentation (does not exist yet)
 │   └── logs/           # Waveform images and logs of test runs
 └── README.md           # You are here
 ```
@@ -123,14 +123,20 @@ Given below are the major components of the floating-point adder and their corre
 
 Refer to [this page](./docs/theory.md) for detailed documentation on floating-point adder theory.
 
+## Testing
+
+| Precision | $le$ | $lm$ | $N_{samples}$ | $N_{fail}$ | Accuracy | Execution Time |
+| --- | --- | --- | --- | --- | --- | --- | 
+| fp32 | 8 | 23 | 200000 | 0 | 100% | 35m 29s | 
+
 ## RoadMap
 
 ### V1.0 - Functional Correctness
 - [x] Handles additions/subtractions of normalized numbers.
 - [x] Accounts for sub-normal numbers.
 - [x] Handles +0, -0
-- [ ] Handles $+\infty$, $-\infty$
-- [ ] Handles NaN propagation
+- [x] Handles $+\infty$, $-\infty$
+- [x] Handles NaN propagation
 
 ### V1.1 - Verification & Characterization (unpipelined)
 - [ ] Promote corner cases from [`running_doc.md`](./docs/logs/running_doc.md) into a permanent regression suite

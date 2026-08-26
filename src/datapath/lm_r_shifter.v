@@ -15,7 +15,7 @@ module lm_r_shifter
     wire [lm-1:0] in_or;
     wire temp_s;
     wire [le-1:0] lm_add_3;
-    assign lm_add_3 = lm + 3;
+    assign lm_add_3 = lm + 3; // lm + 4 -> all bits shifted right, meaningful shifts: [0,lm+3]
 
     min #(
         .W(le)
@@ -51,20 +51,20 @@ module lm_r_shifter
     endgenerate
 
     mux #(
-        .N(lm+1),
+        .N(lm+2),
         .W(1)
     ) g_mux ( // selecter for ground bit
-        .in({in[lm-1:0],1'b0}),
-        .sel(shamt_[$clog2(lm+1)-1:0]),
+        .in({in[lm:0],1'b0}),
+        .sel(shamt_[$clog2(lm+2)-1:0]),
         .out(out[2])
     );
 
     mux #(
-        .N(lm+2),
+        .N(lm+3),
         .W(1)
     ) r_mux ( // selecter for round bit
-        .in({in[lm-1:0],2'b00}),
-        .sel(shamt_[$clog2(lm+2)-1:0]),
+        .in({in[lm:0],2'b00}),
+        .sel(shamt_[$clog2(lm+3)-1:0]),
         .out(out[1])
     );
 

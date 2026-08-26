@@ -192,4 +192,39 @@ Case (1) has been ***resolved***
     - Observed ans = a
 
     Causes:
-    
+    - Shamt = 24 is very specific
+    - b is normal, hence has a leading 1
+    - b < a, which means that after manstissa shifting of b, leading 1 should appear in G bit (hence, specfic shamt value)
+    - However, in *[lm_r_shifter](../../src/datapath/lm_r_shifter.v)*:
+    ```verilog
+        mux #(
+        .N(lm+1),
+        .W(1)
+    ) g_mux ( // selecter for ground bit
+        .in({in[lm-1:0],1'b0}),
+        .sel(shamt_[$clog2(lm+1)-1:0]),
+        .out(out[2])
+    );
+    ```
+    - G mux must be (lm+2):1 mux, not (lm+1):1 mux *(I most likely forgot about leading bit and considered mantissa size as lmmmmm, not lm+1)*
+    - Also, input line starts from `in[lm-1]`, ignoring `in[lm]`, basically ignoring leading bit
+    - Not an issue if leading bit is 0 (subnormal), but will always be missed if 1 (for all normal numbers)
+    - Similar issue with R mux:
+    ```verilog
+    mux #(
+        .N(lm+2),
+        .W(1)
+    ) r_mux ( // selecter for round bit
+        .in({in[lm-1:0],2'b00}),
+        .sel(shamt_[$clog2(lm+3)-1:0]),
+        .out(out[1])
+    );
+    ```
+
+    Fix:
+    - Increase N by 1 for both muxes
+    - Start input lines from `in[lm]` instead of `in[lm-1]`
+
+*(Ran the same test vectors again, no fail cases, hence fail cases (2) and (3) were different instances of documented fail case (1))*
+
+### Test 12

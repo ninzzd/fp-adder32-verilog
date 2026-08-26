@@ -17,9 +17,8 @@ module special_op #(
     assign b_is_inf = &(b[lm+le-1:lm]) & ~|(b[lm-1:0]);
     assign a_is_snan = &(a[lm+le-1:lm]) & ~a[lm-1] & |(a[lm-2:0]);
     assign b_is_snan = &(b[lm+le-1:lm]) & ~b[lm-1] & |(b[lm-2:0]);
-    assign a_is_qnan = &(a[lm+le-1:lm]) & a[lm-1] & ~|(a[lm-2:0]);
-    assign b_is_qnan = &(b[lm+le-1:lm]) & b[lm-1] & ~|(b[lm-2:0]);
-
+    assign a_is_qnan = &(a[lm+le-1:lm]) & a[lm-1];
+    assign b_is_qnan = &(b[lm+le-1:lm]) & b[lm-1];
     assign a_is_nan = a_is_snan | a_is_qnan;
     assign b_is_nan = b_is_snan | b_is_qnan;
 
