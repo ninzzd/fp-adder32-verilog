@@ -89,3 +89,107 @@ This was resolved by flipping (XOR) originally conceptualized sign logic when op
    - Finally: change min(a0e, maddres_lshamt) to min(a0e-1,maddres_lshamt) before the subtraction to get rese_bround : build dedicated decrementer circuit
   
 Case (1) has been ***resolved***
+
+### Test 9
+**Date:** *18-08-2026*
+**File:** *[t9-fail-180826.log](t9-fail-180826.log)*
+
+1.  FAIL: a=7f800000 b=ff800000 op=0 expected=7fc00000 got=ff800000
+    Observations:
+    - a  = `inf`, b = `-inf`, op = `+`
+    - expected ans = `inf - inf` = `NaN`
+    - obtained ans = `-inf`
+
+    Cause:
+    - The previous condition for handling `inf` operands was wrong
+    - First, check if an operand is `NaN`, if true, output is also NaN
+    - Else, check if an operand is `inf`, if true, output is also `inf` (*incorrect condtion, only holds when exactly one of the operands is inf or both are inf and signs after adjusting op, are the same*)
+    - Previous assigment ternary condition:
+    ```verilog
+        assign out = a_is_nan | b_is_nan ? 2'b10 : a_is_inf | b_is_inf ? 2'b01 : 2'b00;
+    ```
+
+    Fix:
+    ```verilog
+        assign maddop = a[lm+le] ^ b[lm+le] ^ op;
+        assign out = a_is_nan | b_is_nan ? 2'b10 : a_is_inf & b_is_inf & maddop ? 2'b10 : a_is_inf | b_is_inf ? 2'b01 : 2'b00;
+    ```
+    - `*_is_inf` checks only the exponent, not the sign
+    - `madopp` or *mantissa-adder-operation* being 1, already acounts for $S_a$, $S_b$ and `op`
+
+    **Note: Fail cases (2) is also caused by the same issue, other issues remain unsolved and appear in Test 10.
+
+### Test 10
+**Date:** *18-08-2026*
+**File:** *[t10-fail-180826.log](t10-fail-180826.log)*
+
+1. FAIL: a=7f800000 b=00000001 op=1 expected=7f800000 got=ff800000
+
+    Observations:
+    - a = `+inf`, b = `2^(-149)` (smallest non-zero positive number in fp32), op = `-`
+    - Expected ans = `+inf`
+    - Observed ans = `-inf`
+
+    Causes:
+    - The output sign is determined by the result of the this mux:
+    ```verilog
+    mux #(
+        .W(1),
+        .N(2)
+    ) res_sign_mux (
+        .in({maddop&~sop_out[1],res_sign}), // Design choice: output canonical qNaN always, with sign bit 0
+        .sel(sop_out_or),
+        .out(c[lm+le])
+    );
+    ```
+    - When `sop_out[1]` is `1'b1`, the output must be qNaN, which by convention assumed in this project, must be positive ($S_c$ = 0), which is enforced by the the AND gate feeding input line 1.
+    - But when `sop_out[1]` is `1'b0`, the other input of the AND gate, `maddop`, is passed. This case always corresponds to `sop_out[0]` is `1'b0`
+    - In this failure case, `maddop` is clearly `-`, or `1'b1`, which is not representative of the expected sign.
+
+    Fix:
+    - Either change the entire $S_c$ mux (seems fairly redundant) and use only `res_sign` and not `maddop`, or pass a special `sop_sign` bit from the *special_op* module.
+    - Why not take `res_sign` for `inf` sign determination? `res_sign` is obtained deep in the main datapath, after mantissa addition, leading zero detection, mantissa normalization and exponent adjustment, which may cause 
+    ```verilog
+    assign flag = ~maddcout&maddop; // if the result is negative, we need to take 2's complement
+    assign res_sign = (a0s ^ flag ^ (op&~ageb));
+    ```
+    - Seems like `res_sign` should hold for `inf` operands too. *(explain in detail below)*
+    - New sign assignment:
+    ```verilog
+    assign c[lm+le] = res_sign & ~sop_out[1];
+    ```
+
+
+2. FAIL: a=80000000 b=80000000 op=0 expected=80000000 got=00000000
+
+    Observations:
+    - a = `-0`, b = `-0`, op = `+`
+    - Expected ans = `-0`
+    - Observed ans = `+0`
+
+    Causes:
+    - My design used to enforce `+0` strictly due to `..&~maddress_isZero` in the following line in *[fpadd](../../src/fpadd.v)*:
+    ```verilog
+        assign res_sign = (a0s ^ flag ^ (op&~ageb))&~maddres_isZero;
+    ```
+
+    Fix:
+    - Omit that ANG-gating entirely:
+    ```verilog
+        assign res_sign = (a0s ^ flag ^ (op&~ageb));
+    ```
+*Fail cases (1) and (2) were successfully resolved using the suggested fixes*
+
+### Test 11
+**Date:** *27-08-2026*
+**File:** *[t11-fail-270826.log](t11-fail-270826.log)*
+
+*Same vectors as Test 10 and 9, contains remaining errors not solved in fixes for Test 10 and 9*
+1. FAIL: a=7f7fffff b=73000000 op=0 expected=7f800000 got=7f7fffff
+    Observations:
+    - a = `(2 - 2^(-23))*2^(127)` (largest non-`inf` posiive number), b = `2^(103)` (shamt = 24), op = `+`
+    - Expected ans = `+inf`
+    - Observed ans = a
+
+    Causes:
+    

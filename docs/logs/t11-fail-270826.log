@@ -1,0 +1,3 @@
+FAIL: a=7f7fffff b=73000000 op=0 expected=7f800000 got=7f7fffff
+FAIL: a=3f800000 b=33c00000 op=0 expected=3f800001 got=3f800000
+FAIL: a=3f800000 b=33800001 op=0 expected=3f800001 got=3f800000

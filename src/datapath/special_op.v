@@ -25,7 +25,7 @@ module special_op #(
 
     assign maddop = a[lm+le] ^ b[lm+le] ^ op;
 
-    assign out = a_is_nan | b_is_nan ? 2'b10 : a_is_inf & b_is_inf & maddop ? 2'b10 : a_is_inf | b_is_inf ? 2'b01 : 2'b00;
+    assign out = a_is_nan | b_is_nan ? 2'b10 : a_is_inf & b_is_inf & maddop ? 2'b10 : a_is_inf | b_is_inf ? 2'b01 : 2'b00; // 3rd condition (when result must ne +/-inf): what about sign?
     
 
 endmodule

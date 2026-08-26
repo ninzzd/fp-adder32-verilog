@@ -199,7 +199,7 @@ module fpadd #(
         .shamt(a0e_lshamt_min),
         .out(maddres_ls)
     );
-    assign res_sign = (a0s ^ flag ^ (op&~ageb))&~maddres_isZero; // sign of the result, -0 is not allowed, pushed to +0
+    assign res_sign = (a0s ^ flag ^ (op&~ageb)); // sign of the result, IEEE 754 allows +/-0
 
     mux #(
         .W(lm+4),
@@ -263,14 +263,7 @@ module fpadd #(
 
     // special values (inf/nan) handling
     assign sop_out_or = |(sop_out);
-    mux #(
-        .W(1),
-        .N(2)
-    ) res_sign_mux (
-        .in({maddop&~sop_out[1],res_sign}), // Design choice: output canonical qNaN always, with sign bit 0
-        .sel(sop_out_or),
-        .out(c[lm+le])
-    );
+    assign c[lm+le] = res_sign & ~sop_out[1];
 
     assign c[lm+le-1:lm] = res_exp | {le{sop_out_or}};
     
