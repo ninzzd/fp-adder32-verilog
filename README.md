@@ -123,11 +123,12 @@ Given below are the major components of the floating-point adder and their corre
 
 Refer to [this page](./docs/theory.md) for detailed documentation on floating-point adder theory.
 
-## Testing
+## Verification and Testing
 
 | Precision | $le$ | $lm$ | $N_{samples}$ | $N_{fail}$ | Accuracy | Execution Time |
 | --- | --- | --- | --- | --- | --- | --- | 
-| fp32 | 8 | 23 | 200000 | 0 | 100% | 35m 29s | 
+| fp32 | 8 | 23 | 200000 | 0 | 100% | 35m 29s |
+| bf16 | 8 | 7 | 200000 | 0 | 100% | 3m 30s |
 
 ## RoadMap
 

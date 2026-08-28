@@ -229,12 +229,17 @@ Case (1) has been ***resolved***
 
 ### Test 12
 **Date:** *28-08-2026*
-**File:** **
+**File:** *[gmpsweep-lm23-le8-20260828-213842.log](/docs/logs/gmpsweep-lm23-le8-20260828-213842.log)*
 
-*Issue has been fixed already, need to git checkout old code to reproduce the errors*
+*This issue had been fixed (see [gmpsweep-lm7-le8-20260828-181427.log](/docs/logs/gmpsweep-lm7-le8-20260828-181427.log)), I reproduced the issue to document the original issue and the fix*
 
-1. FAIL
+1. FAIL: a=8c6e9037 b=ffda0336 op=1 expected=7fc00000 got=7f800000
+    
     Observation:
+    - a=-1.83782511e-31 b=nan op=1 expected=nan got=inf
+    - All other fail cases are similar to this
+    
+    Causes:
     - At least one of the operands is a NaN
     - Old code could handle sNaN and **canonical** qNaNs only:
     ```verilog
@@ -246,6 +251,8 @@ Case (1) has been ***resolved***
         // b_is_qnan = 1 if b = x|1...1|10...0
         // the reduce NOR - ~|(a[lm-2:0]) is responsible
         // Non-canonical qNaNs: x|1...1|1x...x, not caught
+        // For eg. a = 1|1...1|101001...0
+        // a is still a qNaN, slips detection
 
     ```
     - Non-canonical qNaNs would pass both sNaN and erroneous qNaN checks
@@ -264,4 +271,27 @@ Case (1) has been ***resolved***
 **Date:** *28-08-2026*
 **File:** *[gmpsweep-lm7-le8-20260828-181427.log](/docs/logs/gmpsweep-lm7-le8-20260828-181427.log)*
 
+1. FAIL: a=d82c b=629f op=1 expected=e29f got=e2ca
+    Observations:
+    - a=-7.565e+14 b=1.467e+21 op=1 expected=-1.467e+21 got=-1.863e+21
 
+    Causes:
+    - bf16 is particularly special
+    - lm = 7 => clog2(lm) = clog2(lm+1) = 3
+    - But clog2(lm+2) = clog2(lm+3) = clog2(lm+4) = 4
+    - For non-trivial shifts (without flushing out all mantissa bits), shamt can take on the values: $[0,lm+3]$
+    - Hence: shamt_ = clip(shamt,lm+3)
+    - But shamt_ is also an le-bit vector
+    - Only the first (lm+4) values of shamt_ are meaningful for shifting, hence when passing shamt_ to the select inputs of the muxes, shamt_ should be truncated to clog2(lm+4) bits or `shamt_[$clog2(lm+4)-1:0]`
+    - This was being done only for the S bit mux
+    - For all output significand bits, the truncation used earlier was: `shamt_[$clog2(lm+1)-1:0]`, as I had assumed that there are only lm+1 meaningful input lines to worry about.
+    - G mux sel was set as `shamt_[$clog2(lm+2)-1:0]`, R mux sel was set as `shamt_[$clog2(lm+3)-1:0]`, which work only in this case because values lm+2 and lm+3 require an extra bit to represent.
+    - However, this inherently truncates the bit 4 of shamt_, which not only makes it impossible to represent shamt values of 8, 9 and 10 correctly, but also, the passed truncated bits would have values 0, 1 and 2 respectively (shamt mod 7)
+    - Hence all significand bits were wrongly shifted by 0, 1 or 2 right-shifts instead of 8, 9 or 10 right-shifts, proving that truncating based on number of leading input-mantissa bits is inaccurate
+
+    Fix:
+    - Change truncation bit-width for the select line of all muxes to be (lm+4), let all muxes, including G and R, to be (lm+4):1 muxes
+    - Adjust for the additional bits by appending (i+3) 0-bits to the left of `in[lm:i]` for output-significand muxes, in the input lines.
+    - For G and R muxes, append `2'b00` and `1'b0` to the left of `in[lm:0]`, respectively, in the input lines.
+
+*This fixed the error and bf16 was verified over 200000 randomized input vectors (see [gmpsweep-lm7-le8-20260828-231445.log](/docs/logs/gmpsweep-lm7-le8-20260828-231445.log))*

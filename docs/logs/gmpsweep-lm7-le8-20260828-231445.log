@@ -1,0 +1,5 @@
+gmp_golden_sweep: lm=7 le=8
+mode: sampled (200000 vectors, seed=0)
+vectors run: 200000
+failures: 0
+------------------------------------------------------------

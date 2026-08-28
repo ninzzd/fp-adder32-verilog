@@ -27,44 +27,44 @@ module lm_r_shifter
 
     generate
         for(i = 0; i <= lm; i = i + 1) begin: shifter_gen
-            if(i == 0)begin
+            // if(i == 0)begin
+            //     mux #(
+            //         .N(lm+4),
+            //         .W(1)
+            //     ) shifter_mux (
+            //         .in({{(i+3){1'b0}},in[lm:i]}), // shift in zeros
+            //         .sel(shamt_[$clog2(lm+4)-1:0]),
+            //         .out(out[i+3])
+            //     );
+            // end
+            // else begin
                 mux #(
-                    .N(lm+1),
+                    .N(lm+4),
                     .W(1)
                 ) shifter_mux (
-                    .in(in[lm:i]), // shift in zeros
-                    .sel(shamt_[$clog2(lm+1)-1:0]),
+                    .in({{(i+3){1'b0}},in[lm:i]}), // shift in zeros
+                    .sel(shamt_[$clog2(lm+4)-1:0]),
                     .out(out[i+3])
                 );
-            end
-            else begin
-                mux #(
-                    .N(lm+1),
-                    .W(1)
-                ) shifter_mux (
-                    .in({{i{1'b0}},in[lm:i]}), // shift in zeros
-                    .sel(shamt_[$clog2(lm+1)-1:0]),
-                    .out(out[i+3])
-                );
-            end
+            // end
         end
     endgenerate
 
     mux #(
-        .N(lm+2),
+        .N(lm+4),
         .W(1)
     ) g_mux ( // selecter for ground bit
-        .in({in[lm:0],1'b0}),
-        .sel(shamt_[$clog2(lm+2)-1:0]),
+        .in({2'b00,in[lm:0],1'b0}),
+        .sel(shamt_[$clog2(lm+4)-1:0]),
         .out(out[2])
     );
 
     mux #(
-        .N(lm+3),
+        .N(lm+4),
         .W(1)
     ) r_mux ( // selecter for round bit
-        .in({in[lm:0],2'b00}),
-        .sel(shamt_[$clog2(lm+3)-1:0]),
+        .in({1'b0,in[lm:0],2'b00}),
+        .sel(shamt_[$clog2(lm+4)-1:0]),
         .out(out[1])
     );
 
