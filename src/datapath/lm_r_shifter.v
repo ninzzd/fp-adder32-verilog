@@ -33,7 +33,7 @@ module lm_r_shifter
                     .W(1)
                 ) shifter_mux (
                     .in(in[lm:i]), // shift in zeros
-                    .sel(shamt_[$clog2(lm)-1:0]),
+                    .sel(shamt_[$clog2(lm+1)-1:0]),
                     .out(out[i+3])
                 );
             end
@@ -43,7 +43,7 @@ module lm_r_shifter
                     .W(1)
                 ) shifter_mux (
                     .in({{i{1'b0}},in[lm:i]}), // shift in zeros
-                    .sel(shamt_[$clog2(lm)-1:0]),
+                    .sel(shamt_[$clog2(lm+1)-1:0]),
                     .out(out[i+3])
                 );
             end

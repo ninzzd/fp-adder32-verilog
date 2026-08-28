@@ -158,7 +158,7 @@ def ctx_kwargs(ctx):
 # --------------------------------------------------------------------------
 
 def selftest(trials=20000):
-    import struct
+    import struct # what does strict do??
     lm, le = 23, 8
     ctx = make_context(lm, le)
     rng = random.Random(0)
@@ -202,7 +202,7 @@ def gen_exhaustive(lm, le):
 
 def gen_sample(lm, le, n, seed):
     width = lm + le + 1
-    rng = random.Random(seed)
+    rng = random.Random(seed) # MT19937 algorithm for random number generation
     for _ in range(n):
         yield rng.getrandbits(width), rng.getrandbits(width), rng.getrandbits(1)
 

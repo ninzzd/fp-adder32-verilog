@@ -228,3 +228,40 @@ Case (1) has been ***resolved***
 *(Ran the same test vectors again, no fail cases, hence fail cases (2) and (3) were different instances of documented fail case (1))*
 
 ### Test 12
+**Date:** *28-08-2026*
+**File:** **
+
+*Issue has been fixed already, need to git checkout old code to reproduce the errors*
+
+1. FAIL
+    Observation:
+    - At least one of the operands is a NaN
+    - Old code could handle sNaN and **canonical** qNaNs only:
+    ```verilog
+        assign a_is_snan = &(a[lm+le-1:lm]) & ~a[lm-1] & |(a[lm-2:0]);
+        assign b_is_snan = &(b[lm+le-1:lm]) & ~b[lm-1] & |(b[lm-2:0]);
+        assign a_is_qnan = &(a[lm+le-1:lm]) & a[lm-1] & ~|(a[lm-2:0]);
+        assign b_is_qnan = &(b[lm+le-1:lm]) & b[lm-1] & ~|(b[lm-2:0]);
+        // a_is_qnan = 1 if a = x|1...1|10...0
+        // b_is_qnan = 1 if b = x|1...1|10...0
+        // the reduce NOR - ~|(a[lm-2:0]) is responsible
+        // Non-canonical qNaNs: x|1...1|1x...x, not caught
+
+    ```
+    - Non-canonical qNaNs would pass both sNaN and erroneous qNaN checks
+
+    Fix:
+    - Changed the qNaN assign statement:
+    ```verilog
+        assign a_is_snan = &(a[lm+le-1:lm]) & ~a[lm-1] & |(a[lm-2:0]);
+        assign b_is_snan = &(b[lm+le-1:lm]) & ~b[lm-1] & |(b[lm-2:0]);
+        assign a_is_qnan = &(a[lm+le-1:lm]) & a[lm-1];
+        assign b_is_qnan = &(b[lm+le-1:lm]) & b[lm-1];
+        // reduction is required only for sNaN to distinguish it from infs
+    ```
+
+### Test 13
+**Date:** *28-08-2026*
+**File:** *[gmpsweep-lm7-le8-20260828-181427.log](/docs/logs/gmpsweep-lm7-le8-20260828-181427.log)*
+
+
