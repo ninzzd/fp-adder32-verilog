@@ -295,3 +295,34 @@ Case (1) has been ***resolved***
     - For G and R muxes, append `2'b00` and `1'b0` to the left of `in[lm:0]`, respectively, in the input lines.
 
 *This fixed the error and bf16 was verified over 200000 randomized input vectors (see [gmpsweep-lm7-le8-20260828-231445.log](/docs/logs/gmpsweep-lm7-le8-20260828-231445.log))*
+
+### Test 14
+**Date:** *28-08-2026*
+**File:** *[gmpsweep-lm3-le4-20260828-233750.log](/docs/logs/gmpsweep-lm3-le4-20260828-233750.log)*
+
+*This was an exhaustive test of the 8-bit E4M3 precision*
+
+*First, gmpy2 tester is also faulty. It asserts all zero-outputs to have positive sign, hence zero-results are always +0.0*
+
+*However, the design is bugged too. It is outputting -0.0 in many cases which should actually be +0.0*
+
+1. FAIL: a=80 b=00 op=0 expected=00 got=80
+    Observations:
+    - a=-0.0 b=0.0 op=0 expected=0.0 got=-0.0
+    - (-0.0) + (+0.0) must be +0.0
+    - Cases in which result can be -0.0:
+      - (i) (-0.0) + (-0.0) -> maddop = 1, sign_a = 1
+      - (ii) (-0.0) - (+0.0) -> maddop = 1, sign_a = 1
+    - Cases in which result must be +0.0:
+      - (iii) (+0.0) + (+0.0)
+      - (iv) (+0.0) - (-0.0)
+      - (v) (-0.0) + (+0.0)
+      - (vi) (-0.0) - (-0.0)
+      - (vii) (+0.0) - (+0.0)
+      - (viii) (+0.0) + (-0.0)
+      - (ix) (+a) + (-a) (for non-zero a)
+      - (x) (+a) - (+a)
+      - (xi) (-a) + (+a)
+      - (xii) (-a) - (-a) 
+    - This fail case violates case (v)
+    - *Will be diagnosed and solved tomorrow*
