@@ -394,9 +394,11 @@ def main():
             exp_bits = golden_result(a_bits, b_bits, op, lm, le, ctx)
             yield a_bits, b_bits, op, exp_bits
 
+    sweep_start = time.time()
     with tempfile.TemporaryDirectory(dir=REPO_ROOT / "docs" / "logs") as tmp:
         work_dir = Path(tmp)
         stdout, n_run = run_dut(lm, le, with_golden(), work_dir, total_hint=total)
+    elapsed = time.time() - sweep_start
 
     fails = [line for line in stdout.splitlines() if line.startswith("FAIL:")]
 
@@ -408,6 +410,7 @@ def main():
         f.write(f"mode: {mode}\n")
         f.write(f"vectors run: {n_run}\n")
         f.write(f"failures: {len(fails)}\n")
+        f.write(f"execution time: {format_elapsed(elapsed)}\n")
         f.write("-" * 60 + "\n")
         for line in fails:
             f.write(line + "\n")

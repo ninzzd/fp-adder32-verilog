@@ -105,14 +105,15 @@ The hand-drawn diagram below depicts the micro-architectural implementation of t
 │   ├── datapath_tb/    # Test-benches for datapath-specific modules
 │   ├── utils_tb/       # Test-benches for general modules
 │   └── fpadd_tb.v      # Main test-bench file (.v)
-├── docs/               # Technical documentation and diagrams
-│   # ├── README.md     # Documentation (does not exist yet)
+├── docs/               # Documentations (.md) and diagrams
 │   └── logs/           # Waveform images and logs of test runs
 └── README.md           # You are here
 ```
 
 ## Documentation
-Given below are the major components of the floating-point adder and their corresponding documentation links:
+Refer to the linked files for a deep dive into the project.
+### Design
+- [Theory](./docs/theory.md)
 - [Nomenclature](./docs/nomenclature.md)
 - [Exponent Comparator](./docs/exponent_comparator.md)
 - [Mantissa Alignment](./docs/mantissa_alignment.md)
@@ -121,10 +122,11 @@ Given below are the major components of the floating-point adder and their corre
 <!-- - [Normalization](./docs/normalization.md) -->
 - [Rounding](./docs/rounding.md)
 
-Refer to [this page](./docs/theory.md) for detailed documentation on floating-point adder theory.
-
-## Verification and Testing
-
+### Validation
+- [FP32 Golden Model in C](./docs/real2hex.md)
+- [GMP Golden Model](./docs/gmp_golden_sweep.md)
+## Results
+Refer
 | Precision | $le$ | $lm$ | $N_{samples}$ | $N_{fail}$ | Accuracy | Execution Time |
 | --- | --- | --- | --- | --- | --- | --- | 
 | fp32 | 8 | 23 | 200000 | 0 | 100% | 35m 29s |
@@ -139,17 +141,15 @@ Refer to [this page](./docs/theory.md) for detailed documentation on floating-po
 - [x] Handles $+\infty$, $-\infty$
 - [x] Handles NaN propagation
 
-### V1.1 - Verification & Characterization (unpipelined)
-- [ ] Promote corner cases from [`running_doc.md`](./docs/logs/running_doc.md) into a permanent regression suite
-- [ ] Cross-validate against a reference oracle (e.g. SoftFloat) using `real2hex` vectors
-- [ ] STA/critical-path analysis on the unpipelined datapath, baseline Fmax
+### V1.1 - Performance Analysis (Unpipelined)
+- [ ] STA/critical-path analysis
 - [ ] FPGA prototyping: resource utilization + baseline Fmax
-- [ ] Benchmark Fmax, critical-path delay, and power/energy across bit-width configs (`le`, `lm`) relevant to ML inference: binary32 (`le=8, lm=23`), binary16 (`le=5, lm=10`), bfloat16 (`le=8, lm=7`), FP8 E4M3 (`le=4, lm=3`), FP8 E5M2 (`le=5, lm=2`)
+- [ ] Profiling: Fmax, power, area for bit-widths: fp32, fp16, bf16, sweeps
 
-### V2.0 - Pipelining & Performance
-- [ ] Pipelining, with stage boundaries chosen from the V1.1 critical-path breakdown
-- [ ] Re-run FPGA prototyping post-pipelining: resource utilization + Fmax delta vs. V1.1 baseline (same bit-width configs)
-- [ ] Fmax estimation for the pipelined architecture vs. the V1.1 unpipelined baseline
+### V2.0 - Performance Analysis (Pipelined)
+- [ ] Pipelining: hold-time analysis, algorithmic/optimal pipelining 
+- [ ] Analysis: Fmax, Power, Area across bit-widhts, sweeps
+
 
 ## License
 This project is open-source and available under the terms of the [MIT License](LICENSE).
