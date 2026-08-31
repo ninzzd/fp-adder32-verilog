@@ -1,0 +1,10 @@
+gmp_golden_sweep: lm=3 le=4
+mode: exhaustive (2^16 pairs x 2 ops = 131072 vectors)
+vectors run: 131072
+failures: 2
+execution time: 42s 503ms
+------------------------------------------------------------
+FAIL: a=80 b=00 op=1 expected=00 got=80
+    a=-0.0 b=0.0 op=1 expected=0.0 got=-0.0
+FAIL: a=80 b=80 op=0 expected=00 got=80
+    a=-0.0 b=-0.0 op=0 expected=0.0 got=-0.0

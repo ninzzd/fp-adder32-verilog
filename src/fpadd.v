@@ -199,7 +199,7 @@ module fpadd #(
         .shamt(a0e_lshamt_min),
         .out(maddres_ls)
     );
-    assign res_sign = (a0s ^ flag ^ (op&~ageb)); // sign of the result, IEEE 754 allows +/-0
+    assign res_sign = (a0s ^ flag ^ (op&~ageb)) & ~(maddop & maddres_isZero); // sign of the result, IEEE 754 allows +/-0
 
     mux #(
         .W(lm+4),

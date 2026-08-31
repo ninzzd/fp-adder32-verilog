@@ -1,0 +1,6 @@
+gmp_golden_sweep: lm=4 le=4
+mode: exhaustive (2^18 pairs x 2 ops = 524288 vectors)
+vectors run: 524288
+failures: 0
+execution time: 3m 03s
+------------------------------------------------------------

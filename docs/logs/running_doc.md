@@ -308,10 +308,12 @@ Case (1) has been ***resolved***
 
 1. FAIL: a=80 b=00 op=0 expected=00 got=80
     Observations:
-    - a=-0.0 b=0.0 op=0 expected=0.0 got=-0.0
+    - a=-0.0 b=0.0 op=0 expected=0.0 got=-0.0 (case (v))
     - (-0.0) + (+0.0) must be +0.0
+
+    Causes :
     - Cases in which result can be -0.0:
-      - (i) (-0.0) + (-0.0) -> maddop = 1, sign_a = 1
+      - (i) (-0.0) + (-0.0) -> maddop = 0, sign_a = 1
       - (ii) (-0.0) - (+0.0) -> maddop = 1, sign_a = 1
     - Cases in which result must be +0.0:
       - (iii) (+0.0) + (+0.0)
@@ -325,4 +327,33 @@ Case (1) has been ***resolved***
       - (xi) (-a) + (+a)
       - (xii) (-a) - (-a) 
     - This fail case violates case (v)
-    - *Will be diagnosed and solved tomorrow*
+
+    Fix:
+    - In all cases, `ageb` = 1 (same magnitudes, either cancel or add and have zero-magnitude)
+    - This means: $A_0 = A$ and $B_0 = B$
+    - $\implies S_C = S_A \oplus (\overline{maddcout}.maddop)$
+    - When `maddop` is 0 (add), you get: $S_C = S_A$ which is correct, and implements cases (i, ii, iii, iv) correctly
+    - When `maddop` is 1 (sub), since $M_A = M_B$,`maddcout` is always 1 (sub(a,b) = $2^n$ + a - b = $2^n$ => carry)
+    - Hence, you still get: $S_C = S_A$, which is clearly not true, and it needs to enforced to 0.
+    - The issue arises only when `maddop` is 1, and `maddres` is `(lm+4)'b0`, OR `maddres_isZero` is 1.
+    - Hence, just gate `res_sign` as:
+    ```verilog
+        assign res_sign = (a0s ^ flag ^ (op&~ageb)) & ~(maddop & maddres_isZero);
+    ```
+
+### Test 15
+**Date:** *01-09-2026*
+**File:** *[gmpsweep-lm3-le4-20260901-010534.log](./gmpsweep-lm3-le4-20260901-010534.log)*
+
+1. FAIL: a=80 b=00 op=1 expected=00 got=80
+2. FAIL: a=80 b=80 op=0 expected=00 got=80
+
+    Observations:
+    - in 1 - a=-0.0 b=0.0 op=1 expected=0.0 got=-0.0
+    - in 2 - a=-0.0 b=-0.0 op=0 expected=0.0 got=-0.0
+
+    Causes:
+    - Design is correct, gmp golden model is forcing strict positive-zero
+
+    Fix:
+    - Edit golden reference, design is correct

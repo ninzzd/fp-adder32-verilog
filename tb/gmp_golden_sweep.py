@@ -101,7 +101,14 @@ def encode_bits(val, lm, le):
     fpadd.v and docs/logs/running_doc.md):
       - NaN always encodes as the canonical qNaN: sign=0, exp=all-1s,
         mantissa = 1000...0 (regardless of any NaN payload/sign).
-      - Any zero result always encodes as +0 (sign forced to 0).
+
+    Zero results follow the plain IEEE 754 sign rules rather than being
+    forced to +0 (see running_doc.md, Test 14). MPFR already implements
+    those rules on the sum, so the sign of `val` is simply carried through:
+      - (-0) + (-0) -> -0, and (-0) - (+0) -> -0  [same-signed zeros]
+      - (-0) + (+0), (+0) - (+0), (+a) - (+a), ... -> +0
+        [opposite-signed zeros, and exact cancellation of equal operands,
+         which is +0 under round-to-nearest]
     """
     bias = (1 << (le - 1)) - 1
     exp_all1 = (1 << le) - 1
@@ -114,7 +121,9 @@ def encode_bits(val, lm, le):
         return (sign << (lm + le)) | (exp_all1 << lm)
 
     if val == 0:
-        return 0  # +0 always, per project convention
+        # signed zero: is_signed() distinguishes -0.0 from +0.0, which a
+        # plain `val < 0` comparison cannot
+        return (1 << (lm + le)) if gmpy2.is_signed(val) else 0
 
     sign = 1 if gmpy2.sign(val) < 0 else 0
     mag = abs(val)
